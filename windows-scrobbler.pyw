@@ -1,4 +1,5 @@
 import asyncio
+import subprocess
 from dataclasses import replace
 import os
 import webbrowser
@@ -37,13 +38,27 @@ network = pylast.LastFMNetwork(
     password_hash=password_hash,
 )
 
+#function which accepts the song name from discogs and the song name from Windows 
+#and returns the percentage of the words that match
 def compareSongNames(discogsSongName, windowsSongName):
     return SequenceMatcher(None, discogsSongName, windowsSongName).ratio()
 
-def init_interface():
-    menu_def = ['BLANK', ['&Open', '&Exit']]
-    tray = SystemTray(menu=menu_def, icon='favicon.ico', tooltip='MediaScrobbler')
-    tray.show_message('System Tray', 'System Tray Icon Started!')
+def init_system_tray():
+    menu_def = ['BLANK', ['&Show Console Output', '&Exit']]
+    tray = SystemTray(menu=menu_def, icon='favicon.ico', tooltip='MediaScrobbler', window=window)
+    tray.show_icon()
+    return tray
+
+def show_console_output(scrobbledSongs):
+    #show the console output in a pysimplegui window
+    layout = [[sg.Output(size=(100, 20))]]
+    window = sg.Window('Console Output', layout)
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED:
+            break
+    window.close()
+    return window
 
 
 async def get_media_info():
@@ -82,7 +97,20 @@ async def main():
         else:
             print('No tracks found on MusicBrainz')
 
+        scrobbledSongs = []
+
     while True:
+        print(scrobbledSongs)
+        
+        event, values = window.read(timeout=1000)
+        if values == ['&Exit']:
+            quit()
+        if values == ['&Show Console Output']:
+           sg.popup_non_blocking(scrobbledSongs)         
+            
+            
+            
+
         new_song = await get_media_info()
         if new_song is not None:
             current_time_string = time.strftime("%H:%M:%S", time.localtime())
@@ -105,6 +133,8 @@ async def main():
                         )
                         print(str(comparison) + " is good enough comparison between " + musicBrainzArtist + "-" + musicBrainzTitle +  " and " + new_song.get('artist') + " - " + strippedNewSongTitle + "\n\n")
                         print("\nScrobbled " + musicBrainzArtist + " - " + musicBrainzTitle + " successfully \n\n")
+                        #save the scrobbled song in an array
+                        scrobbledSongs.append(musicBrainzArtist + " - " + musicBrainzTitle)
                     else:
                         print(str(comparison) + " is not a good enough match for " + musicBrainzArtist + "-" + musicBrainzTitle + " and " + new_song.get('artist') + " - " + strippedNewSongTitle + "\n\n")
                         print("\nMusicBrainz returned an irelevant result. Skipping.\n\n")
@@ -113,7 +143,9 @@ async def main():
             await asyncio.sleep(1)
 
 if __name__ == '__main__':
-    init_interface()
+    layout = [[sg.Text('MediaScrobbler', font='Any 15')]]
+    window = sg.Window('MediaScrobbler', layout, icon='favicon.ico')
+    tray = init_system_tray()
     asyncio.run(main())
 
 
