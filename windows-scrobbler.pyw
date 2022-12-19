@@ -45,6 +45,7 @@ def init_network():
     else:
         session_key = open(SESSION_KEY_FILE).read()
     network.session_key = session_key
+    
     return network
 
 #function which accepts the song name from discogs and the song name from Windows 
