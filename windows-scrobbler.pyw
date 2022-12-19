@@ -24,19 +24,28 @@ API_KEY = os.getenv('API_KEY')  # this is a sample key
 
 API_SECRET = os.getenv('API_SECRET')
 
-# In order to perform a write operation you need to authenticate yourself read from credentials.txt
-file = open("credentials.txt", "r")
-read =  file.readlines()
-username = read[0].strip()
-password_hash = pylast.md5(read[1].strip())
 
+def init_network():
+    SESSION_KEY_FILE = os.path.join(os.path.expanduser("~"), ".session_key")
+    network = pylast.LastFMNetwork(API_KEY, API_SECRET)
+    if not os.path.exists(SESSION_KEY_FILE):
+        skg = pylast.SessionKeyGenerator(network)
+        url = skg.get_web_auth_url()
 
-network = pylast.LastFMNetwork(
-    api_key=API_KEY,
-    api_secret=API_SECRET,
-    username=username,
-    password_hash=password_hash,
-)
+        print(f"Please authorize this script to access your account: {url}\n")
+        webbrowser.open(url)
+        while True:
+            try:
+                session_key = skg.get_web_auth_session_key(url)
+                with open(SESSION_KEY_FILE, "w") as f:
+                    f.write(session_key)
+                break
+            except pylast.WSError:
+                time.sleep(1)
+    else:
+        session_key = open(SESSION_KEY_FILE).read()
+    network.session_key = session_key
+    return network
 
 #function which accepts the song name from discogs and the song name from Windows 
 #and returns the percentage of the words that match
@@ -44,21 +53,10 @@ def compareSongNames(discogsSongName, windowsSongName):
     return SequenceMatcher(None, discogsSongName, windowsSongName).ratio()
 
 def init_system_tray():
-    menu_def = ['BLANK', ['&Show Console Output', '&Exit']]
+    menu_def = ['BLANK', ['&Show Session Scrobble History', '&Exit']]
     tray = SystemTray(menu=menu_def, icon='favicon.ico', tooltip='MediaScrobbler', window=window)
     tray.show_icon()
     return tray
-
-def show_console_output(scrobbledSongs):
-    #show the console output in a pysimplegui window
-    layout = [[sg.Output(size=(100, 20))]]
-    window = sg.Window('Console Output', layout)
-    while True:
-        event, values = window.read()
-        if event == sg.WIN_CLOSED:
-            break
-    window.close()
-    return window
 
 
 async def get_media_info():
@@ -100,13 +98,26 @@ async def main():
         scrobbledSongs = []
 
     while True:
-        print(scrobbledSongs)
-        
+
         event, values = window.read(timeout=1000)
+        window.hide()
+
         if values == ['&Exit']:
             quit()
-        if values == ['&Show Console Output']:
-           sg.popup_non_blocking(scrobbledSongs)         
+        if values == ['&Show Session Scrobble History']:
+            #unwrap the list of scrobbled songs in the popup
+            scrobbledSongsList = '\n'.join(scrobbledSongs)
+            #assign each song a number
+            scrobbledSongsList = '\n'.join([f'{i+1}. {song}' for i, song in enumerate(scrobbledSongs)])
+
+
+            popup = sg.popup_non_blocking(scrobbledSongsList, title='Scrobbled Songs', keep_on_top=True)
+            if popup == 'OK':
+                popup.close()
+            if event == sg.WIN_CLOSED:
+                popup.close()
+
+                
             
             
             
@@ -143,10 +154,12 @@ async def main():
             await asyncio.sleep(1)
 
 if __name__ == '__main__':
+    network = init_network()
     layout = [[sg.Text('MediaScrobbler', font='Any 15')]]
     window = sg.Window('MediaScrobbler', layout, icon='favicon.ico')
     tray = init_system_tray()
     asyncio.run(main())
+    
 
 
 
