@@ -6,6 +6,6 @@ The application utilizes the APIs for Last.FM and MusicBrainz. Last.FM's API pro
 
 # Todo
 - [x] Separate the API keys from the project for distribution
-- [ ] Add a system tray gui for the application
-- [ ] Add native Last.fm authentication
+- [x] Add a system tray gui for the application
+- [x] Add native Last.fm authentication
 - [ ] Get it on github with a distributable
