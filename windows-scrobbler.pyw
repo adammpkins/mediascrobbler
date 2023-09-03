@@ -1,9 +1,5 @@
 import asyncio
-import subprocess
-from dataclasses import replace
 import os
-import webbrowser
-import pylast
 import time
 from dotenv import load_dotenv
 from winsdk.windows.media.control import (
@@ -53,8 +49,8 @@ def init_script():
 
 # function which accepts the song name from MusicBrainz and the song name from Windows
 # and returns the percentage of the words that match
-def compareSongNames(discogsSongName, windowsSongName):
-    return SequenceMatcher(None, discogsSongName, windowsSongName).ratio()
+def compareSongNames(musicBrainzSongName, windowsSongName):
+    return SequenceMatcher(None, musicBrainzSongName, windowsSongName).ratio()
 
 
 def init_system_tray():
@@ -86,6 +82,8 @@ async def get_media_info():
 
 async def main():
     old_song = await get_media_info()
+    scrobbledSongs = []
+
     if old_song is not None:
         checkOldTrack = musicbrainzngs.search_recordings(
             artist=old_song["artist"], recording=old_song["title"]
@@ -130,7 +128,7 @@ async def main():
                     str(comparison)
                     + " is good enough comparison between "
                     + oldMusicBrainzArtist
-                    + "-"
+                    + " - "
                     + oldMusicBrainzTitle
                     + " and "
                     + old_song.get("artist")
@@ -146,10 +144,11 @@ async def main():
                 + oldMusicBrainzTitle
                 + "successfully \n\n"
             )
+            
+            scrobbledSongs.append(oldMusicBrainzArtist + " - " + oldMusicBrainzTitle)
         else:
             print("No tracks found on MusicBrainz")
 
-        scrobbledSongs = []
 
     while True:
         event, values = window.read(timeout=1000)
@@ -237,7 +236,7 @@ async def main():
                             str(comparison)
                             + " is good enough comparison between "
                             + musicBrainzArtist
-                            + "-"
+                            + " - "
                             + musicBrainzTitle
                             + " and "
                             + new_song.get("artist")
@@ -273,7 +272,7 @@ async def main():
                             "\nMusicBrainz returned an irelevant result. Skipping.\n\n"
                         )
                 else:
-                    print("\nNo tracks found on Discogs \n")
+                    print("\nNo tracks found on musicBrainz \n")
             await asyncio.sleep(1)
 
 
