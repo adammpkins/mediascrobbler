@@ -12,6 +12,7 @@ from psgtray import SystemTray
 import selenium
 from selenium import webdriver
 import requests
+import sys
 
 load_dotenv()
 
@@ -155,10 +156,10 @@ async def main():
         window.hide()
 
         if values == ["&Exit"]:
-            quit()
+            sys.exit()
         if values == ["Log Out"]:
             os.remove(os.path.join(os.path.expanduser("~"), ".session_key"))
-            quit()
+            sys.exit()
         if values == ["&Show Session Scrobble History"]:
             # unwrap the list of scrobbled songs in the popup
             scrobbledSongsList = "\n".join(scrobbledSongs)
