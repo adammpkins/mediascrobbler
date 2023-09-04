@@ -86,9 +86,12 @@ async def main():
     scrobbledSongs = []
 
     if old_song is not None:
-        checkOldTrack = musicbrainzngs.search_recordings(
-            artist=old_song["artist"], recording=old_song["title"]
-        )
+        try:
+            checkOldTrack = musicbrainzngs.search_recordings(
+                artist=old_song["artist"], recording=old_song["title"]
+            )
+        except Exception as e:
+            print(e)
         countOldTracks = int(checkOldTrack.get("recording-count"))
 
         if countOldTracks > 0:
@@ -206,9 +209,12 @@ async def main():
                     .replace("-", "")
                     .strip()
                 )
-                checkTrack = musicbrainzngs.search_recordings(
-                    artist=new_song.get("artist"), recording=strippedNewSongTitle
-                )
+                try:
+                    checkTrack = musicbrainzngs.search_recordings(
+                        artist=new_song.get("artist"), recording=strippedNewSongTitle
+                    )
+                except Exception as e:
+                    print(e)
                 countSongs = int(checkTrack.get("recording-count"))
                 if countSongs > 0:
                     musicBrainzTitle = checkTrack.get("recording-list")[0].get("title")
@@ -279,7 +285,7 @@ async def main():
 
 if __name__ == "__main__":
     session_key = init_script()
-    layout = [[sg.Text("MediaScrobbler", font="Any 15")]]
-    window = sg.Window("MediaScrobbler", layout, icon="favicon.ico")
+    window = sg.Window("", [[sg.Text("MediaScrobbler")]], no_titlebar=True, grab_anywhere=True)
+
     tray = init_system_tray()
     asyncio.run(main())
