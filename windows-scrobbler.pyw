@@ -172,7 +172,7 @@ async def main():
             )
 
             popup = sg.popup_non_blocking(
-                scrobbledSongsList, title="Scrobbled Songs", keep_on_top=True
+                scrobbledSongsList, title="Scrobbled Songs", keep_on_top=True, icon="favicon.ico"
             )
             if popup == "OK":
                 popup.close()
